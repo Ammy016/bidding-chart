@@ -1,10 +1,9 @@
-import React ,{ useEffect, useState } from 'react';
-import axios from 'axios';
+import React ,{ useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import { 
     Table,
     TableBody,
-    TableCell,
+    TableCell, 
     TableContainer,
     TableHead,
     TableRow,
@@ -17,6 +16,9 @@ import {
     FormControlLabel,
     Switch 
  } from '@material-ui/core';
+ import { useHistory } from 'react-router-dom'
+import { useContext } from 'react';
+import { BidContext } from '../BidContext';
 
 const useStyles = makeStyles((theme) => ({
     table: {
@@ -24,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
     },
     tableContainer: {
         borderRadius: 15,
-        margin: '10px 10px',
+        margin: '10px auto',
         maxWidth: 950
     },
     tableHeaderCell: {
@@ -66,8 +68,9 @@ function CustomTable() {
   const classes = useStyles();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] =useState(5);
-  const [userData, setUserData] = useState([]);
-  const [bidState , setBidState ] = useState(true)
+  const [bidState , setBidState ] = useState(true);
+  const history = useHistory()
+  const [userData ,setUserData]  = useContext(BidContext)
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -87,14 +90,19 @@ function CustomTable() {
     setPage(0);
   };
 
-  useEffect(() => {
-      axios.get('https://intense-tor-76305.herokuapp.com/merchants')
-      .then(res => {
-          setUserData(res.data)
 
+
+  const stableSort =  (rows) => {
+    let sortedArr = [...rows]
+    for( let i = 0 ; i < sortedArr.length ; i++){
+        sortedArr[i].showBid = getBids(sortedArr[i].bids);
+    }
+     sortedArr.sort((a, b) => {
+          return b.showBid - a.showBid;
       })
-      .catch(err => new Error(err) )
-  }, [])
+    return sortedArr ;
+  }
+
 
   return (
       <>
@@ -110,39 +118,39 @@ function CustomTable() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {userData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => (
-            <TableRow>
-              <TableCell>
-                  <Grid container>
-                      <Grid item lg={2}>
-                          <Avatar alt={row.firstname} src={row.avatarUrl} className={classes.avatar}/>
-                      </Grid>
-                      <Grid item lg={10}>
-                          <Typography className={classes.name}>{row.firstname} {row.lastname}</Typography>                         
-                      </Grid>
-                  </Grid>
-                </TableCell>
+          { stableSort(userData).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => (
+              <TableRow onClick={() => {history.push(`/${row.id}`)}} >
                 <TableCell>
-                  <Typography color="primary" variant="subtitle2">{row.email}</Typography>
-                </TableCell>
-                <TableCell>
-                    <Typography color="primary" variant="subtitle2">{row.phone}</Typography>
-                </TableCell>
-                <TableCell>
-                    <Typography 
-                    className={classes.status}
-                    style={{
-                        backgroundColor: 
-                        (row.hasPremium ? 'green' : 'red') 
-                    }}
-                    >
-                        {row.hasPremium ? 'prime' : 'non-prime'}
-                    </Typography>
-                </TableCell>
-                <TableCell>
-                    <Typography>{getBids(row.bids)}</Typography>
-                </TableCell>
-            </TableRow>
+                    <Grid container>
+                        <Grid item lg={2}>
+                            <Avatar alt={row.firstname} src={row.avatarUrl} className={classes.avatar}/>
+                        </Grid>
+                        <Grid item lg={10}>
+                            <Typography className={classes.name}>{row.firstname} {row.lastname}</Typography>                         
+                        </Grid>
+                    </Grid>
+                    </TableCell>
+                    <TableCell>
+                    <Typography color="primary" variant="subtitle2">{row.email}</Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography color="primary" variant="subtitle2">{row.phone}</Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography 
+                        className={classes.status}
+                        style={{
+                            backgroundColor: 
+                            (row.hasPremium ? 'green' : 'red') 
+                        }}
+                        >
+                            {row.hasPremium ? 'prime' : 'non-prime'}
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography>{row.showBid}</Typography>
+                    </TableCell>
+                </TableRow> 
           ))}
         </TableBody>
       </Table>
